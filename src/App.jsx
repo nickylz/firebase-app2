@@ -1,8 +1,8 @@
 import { Routes, Route } from "react-router-dom";
-import Navbar from "./componentes/navbar";
-import Post from "./paginas/post";
+import Navbar from "./componentes/Navbar";
+import Post from "./paginas/Post";
 import { Usuario } from "./paginas/Usuario";
-import { Productos } from "./paginas/productos";
+import { Productos } from "./paginas/Productos";
 import { Inicio } from "./paginas/incio";
 
 function App() {

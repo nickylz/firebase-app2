@@ -1,60 +1,57 @@
-import { useState, useEffect } from 'react'
-import { db } from '../lib/firebase'
-import { collection, onSnapshot, query, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore'
+import { useState, useEffect } from "react";
+import { db } from "../lib/firebase";
+import {
+  collection,
+  onSnapshot,
+  query,
+  addDoc,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
+import { Pencil, Trash2, Save } from "lucide-react";
 
 function Post() {
-  //Variable para guardar los post
-  const [post, setPost] = useState([])
-  const [texto, setTexto] = useState("")
-
-  //Variables para manejar la actualizacion
-   // 👇 estado para edición en línea
-  const [editId, setEditId] = useState(null);     // id del mensaje que se edita
-  const [editText, setEditText] = useState("");   // texto del input mientras edito
-
+  const [post, setPost] = useState([]);
+  const [texto, setTexto] = useState("");
+  const [editId, setEditId] = useState(null);
+  const [editText, setEditText] = useState("");
 
   useEffect(() => {
-    // Creamos una consulta
     const consulta = query(collection(db, "post"));
-
-    // Escuchamos los cambios en tiempo real
     const unsubscribe = onSnapshot(consulta, (snapshot) => {
-      const docs = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      //Actualizar post
-      setPost(docs)
-    })
+      const docs = snapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        // orden descendente por fecha
+        .sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
+      setPost(docs);
+    });
+    return () => unsubscribe();
+  }, []);
 
-    //Limpar unsubscribe
-    return () => unsubscribe()
-  }, [])
-
-  //Agregar Post
   const agregarPost = async () => {
-    if (!texto.trim()) return alert("no hay mensaje que enviar") // evitar vacíos
+    if (!texto.trim()) return alert("Por favor escribe un mensaje");
     await addDoc(collection(db, "post"), {
       mensaje: texto,
-      createdAt: new Date(), // fecha actual
-    })
+      createdAt: new Date(),
+      updatedAt: null,
+    });
+    setTexto("");
+  };
 
-    setTexto("") // limpiar input
-  }
+  const borrarPost = async (id) => {
+    const documento = doc(db, "post", id);
+    await deleteDoc(documento);
+  };
 
-  //Elimar Post
-  const borrarPost = async(id)=>{
-    const documento = doc(db,"post", id)
-    await deleteDoc(documento) 
-  }
-
-  // ✏️ Entrar al modo edición
   const comenzarEdicion = (m) => {
     setEditId(m.id);
     setEditText(m.mensaje ?? "");
   };
 
-  // 💾 Guardar cambios y salir del modo edición
   const guardarEdicion = async () => {
     const id = editId;
     if (!id) return;
@@ -67,7 +64,6 @@ function Post() {
     setEditText("");
   };
 
-  // (Opcional) atajos de teclado durante edición: Enter = guardar, Esc = cancelar
   const onEditKeyDown = (e) => {
     if (e.key === "Enter") guardarEdicion();
     if (e.key === "Escape") {
@@ -77,102 +73,120 @@ function Post() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-linear-to-b from-yellow-50 to-amber-100 text-gray-800 flex flex-col items-center py-10">
+      <h1 className="text-4xl font-bold mb-6 text-amber-600 drop-shadow-sm">
+        Publicaciones
+      </h1>
 
-      <h2 className="text-2xl font-bold text-blue-600 mb-4">Post</h2>
-
-      <div className="flex gap-2 mb-6">
+      {/* Input para nuevo post */}
+      <div className="bg-white shadow-md rounded-xl p-6 flex flex-col sm:flex-row gap-4 w-full max-w-2xl border border-amber-100">
         <input
-          className='flex-1 border border-gray-300 p-2 rounded shadow-sm focus:ring-2 focus:ring-blue-400'
+          className="flex-1 border border-amber-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-300 placeholder-gray-400"
           type="text"
-          placeholder="Escribe tu mensaje"
+          placeholder="Escribe algo bonito..."
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && agregarPost()}
         />
         <button
-          className='bg-blue-600 hover:bg-blue-700 text-black px-4 py-2 rounded shadow'
+          className="bg-amber-400 hover:bg-amber-500 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 shadow-sm hover:shadow-md"
           onClick={agregarPost}
         >
-          Guardar
+          Enviar
         </button>
       </div>
 
-      <ul className="space-y-3">
-            {post.map((m) => {
-              const enEdicion = editId === m.id;
-              return (
-                <li
-                  key={m.id}
-                  className="p-3 bg-gray-200 rounded-md shadow-sm border border-gray-300 flex items-start justify-between gap-3"
-                >
-                  {/* Columna izquierda: contenido o editor */}
-                  <div className="flex-1">
-                    {enEdicion ? (
-                      <>
-                        <input
-                          autoFocus
-                          value={editText}
-                          onChange={(e) => setEditText(e.target.value)}
-                          onKeyDown={onEditKeyDown}
-                          className="w-full p-2 border border-gray-300 rounded-md outline-blue-600 mb-1"
-                          placeholder="Editar mensaje..."
-                        />
-                        <div className="text-xs text-gray-600">
-                          (Enter = guardar, Esc = cancelar)
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-gray-900 font-medium break-words">
-                          {m.mensaje}
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          {new Date(m.createdAt).toLocaleString()}
-                          {m.updatedAt ? " · editado" : ""}
-                        </div>
-                      </>
-                    )}
-                  </div>
+      {/* Lista de posts */}
+      <div className="mt-10 bg-white shadow-md rounded-xl p-6 w-full max-w-2xl border border-amber-100">
+        <h3 className="text-2xl font-semibold mb-4 text-amber-600">Mensajes</h3>
+        <ul className="space-y-3">
+          {post.map((m) => {
+            const enEdicion = editId === m.id;
+            const fechaCreacion = m.createdAt
+              ? new Date(
+                  m.createdAt.seconds
+                    ? m.createdAt.seconds * 1000
+                    : m.createdAt
+                ).toLocaleString()
+              : "";
+            const fechaEdicion = m.updatedAt
+              ? new Date(
+                  m.updatedAt.seconds
+                    ? m.updatedAt.seconds * 1000
+                    : m.updatedAt
+                ).toLocaleString()
+              : null;
 
-                  {/* Columna derecha: acciones */}
-                  <div className="flex items-center gap-1">
-                    {enEdicion ? (
-                      // 💾 Guardar (solo aparece mientras edito)
+            return (
+              <li
+                key={m.id}
+                className="p-4 bg-amber-50 hover:bg-amber-100 transition rounded-lg border border-amber-100 shadow-sm flex flex-col gap-2"
+              >
+                {enEdicion ? (
+                  <div className="flex flex-col gap-2">
+                    <input
+                      autoFocus
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      onKeyDown={onEditKeyDown}
+                      className="w-full p-2 border border-amber-200 rounded-md focus:ring-2 focus:ring-amber-300 outline-none"
+                      placeholder="Editar mensaje..."
+                    />
+                    <div className="flex justify-end gap-2 mt-1">
                       <button
                         onClick={guardarEdicion}
-                        className="text-green-700 hover:text-green-900 p-2"
-                        title="Guardar cambios"
+                        className="flex items-center gap-1 bg-amber-400 hover:bg-amber-500 text-white px-3 py-1 rounded-md text-sm font-semibold transition"
                       >
-                        💾
+                        <Save size={16} /> Guardar
                       </button>
-                    ) : (
-                      // ✏️ Editar (solo aparece cuando NO estoy editando)
+                      <button
+                        onClick={() => setEditId(null)}
+                        className="text-gray-600 hover:text-gray-800 font-medium text-sm"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-gray-800 break-wrap-words">
+                        {m.mensaje}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {fechaCreacion}
+                        {fechaEdicion && (
+                          <span className="ml-1 text-gray-400">
+                            · editado {fechaEdicion}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 items-center">
                       <button
                         onClick={() => comenzarEdicion(m)}
-                        className="text-blue-700 hover:text-blue-900 p-2"
-                        title="Editar mensaje"
+                        className="text-amber-600 hover:text-amber-800 transition"
+                        title="Editar"
                       >
-                        ✏️
+                        <Pencil size={18} />
                       </button>
-                    )}
-
-                    {/* 🗑️ Borrar (siempre visible) */}
-                    <button
-                      onClick={() => borrarPost(m.id)}
-                      className="text-red-600 hover:text-red-800 p-2"
-                      title="Eliminar mensaje"
-                    >
-                      🗑️
-                    </button>
+                      <button
+                        onClick={() => borrarPost(m.id)}
+                        className="text-red-500 hover:text-red-700 transition"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
-                </li>
-              );
-            })}
-          </ul>
-
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </div>
-  )
+  );
 }
 
-export default Post
+export default Post;
