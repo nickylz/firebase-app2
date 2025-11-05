@@ -6,7 +6,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <nav className="bg-gradient-to-r from-yellow-500 via-pink-400 to-amber-300 text-white shadow-md p-4 sticky top-0 z-50">
+    <nav className="bg-linear-to-r from-yellow-500 via-pink-400 to-amber-300 text-white shadow-md p-4 sticky top-0 z-50">
       <div className="max-w-6xl mx-auto flex justify-between items-center">
         {/* Logo o título */}
         <h1 className="text-2xl font-bold tracking-wide">Mi Web</h1>
@@ -21,7 +21,7 @@ export default function Navbar() {
 
         {/* Menú principal */}
         <ul
-          className={`flex flex-col sm:flex-row sm:static absolute bg-gradient-to-r from-yellow-500 via-pink-400 to-amber-300 left-0 w-full sm:w-auto sm:gap-8 gap-4 text-lg font-semibold sm:items-center sm:justify-center p-4 sm:p-0 transition-all duration-300 ease-in-out ${
+          className={`flex flex-col sm:flex-row sm:static absolute bg-linear-to-r from-yellow-500 via-pink-400 to-amber-300 left-0 w-full sm:w-auto sm:gap-8 gap-4 text-lg font-semibold sm:items-center sm:justify-center p-4 sm:p-0 transition-all duration-300 ease-in-out ${
             open ? "top-16 opacity-100" : "top-[-400px] opacity-0 sm:opacity-100"
           }`}
         >
