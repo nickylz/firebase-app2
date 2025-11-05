@@ -9,7 +9,7 @@ export default function Navbar() {
     <nav className="bg-linear-to-r from-yellow-500 via-pink-400 to-amber-300 text-white shadow-md p-4 sticky top-0 z-50">
       <div className="max-w-6xl mx-auto flex justify-between items-center">
         {/* Logo o título */}
-        <h1 className="text-2xl font-bold tracking-wide">Mi Web</h1>
+        <h1 className="text-2xl font-bold tracking-wide">Tralalero Tralala</h1>
 
         {/* Botón menú móvil */}
         <button
