@@ -89,8 +89,8 @@ export function Usuario() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-yellow-50 to-amber-100 text-gray-800 flex flex-col items-center py-10">
-      <h1 className="text-4xl font-bold mb-6 text-amber-600 drop-shadow-sm">
+    <div className="min-h-screen bg-linear-to-b from-yellow-50 to-amber-100 text-gray-800 flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8">
+      <h1 className="text-4xl sm:text-5xl font-bold mb-8 text-amber-600 text-center drop-shadow-sm">
         Usuarios
       </h1>
 
@@ -99,63 +99,65 @@ export function Usuario() {
         onSubmit={agregarUsuario}
         className="bg-white shadow-md rounded-xl p-6 flex flex-col gap-4 w-full max-w-lg border border-amber-100"
       >
-        <input
-          type="text"
-          placeholder="Nombre"
-          value={formulario.nombre}
-          onChange={(e) =>
-            setFormulario({ ...formulario, nombre: e.target.value })
-          }
-          className="border border-amber-200 rounded-lg p-2 focus:ring-2 focus:ring-amber-300"
-        />
-        <input
-          type="text"
-          placeholder="Apellidos"
-          value={formulario.apellidos}
-          onChange={(e) =>
-            setFormulario({ ...formulario, apellidos: e.target.value })
-          }
-          className="border border-amber-200 rounded-lg p-2 focus:ring-2 focus:ring-amber-300"
-        />
-        <input
-          type="number"
-          placeholder="Teléfono"
-          value={formulario.telefono}
-          onChange={(e) =>
-            setFormulario({ ...formulario, telefono: e.target.value })
-          }
-          className="border border-amber-200 rounded-lg p-2 focus:ring-2 focus:ring-amber-300"
-        />
-        <input
-          type="email"
-          placeholder="Correo"
-          value={formulario.correo}
-          onChange={(e) =>
-            setFormulario({ ...formulario, correo: e.target.value })
-          }
-          className="border border-amber-200 rounded-lg p-2 focus:ring-2 focus:ring-amber-300"
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <input
+            type="text"
+            placeholder="Nombre"
+            value={formulario.nombre}
+            onChange={(e) =>
+              setFormulario({ ...formulario, nombre: e.target.value })
+            }
+            className="border border-amber-200 rounded-lg p-2 focus:ring-2 focus:ring-amber-300"
+          />
+          <input
+            type="text"
+            placeholder="Apellidos"
+            value={formulario.apellidos}
+            onChange={(e) =>
+              setFormulario({ ...formulario, apellidos: e.target.value })
+            }
+            className="border border-amber-200 rounded-lg p-2 focus:ring-2 focus:ring-amber-300"
+          />
+          <input
+            type="number"
+            placeholder="Teléfono"
+            value={formulario.telefono}
+            onChange={(e) =>
+              setFormulario({ ...formulario, telefono: e.target.value })
+            }
+            className="border border-amber-200 rounded-lg p-2 focus:ring-2 focus:ring-amber-300"
+          />
+          <input
+            type="email"
+            placeholder="Correo"
+            value={formulario.correo}
+            onChange={(e) =>
+              setFormulario({ ...formulario, correo: e.target.value })
+            }
+            className="border border-amber-200 rounded-lg p-2 focus:ring-2 focus:ring-amber-300"
+          />
+        </div>
         <button
           type="submit"
-          className="bg-amber-400 hover:bg-amber-500 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+          className="bg-amber-400 hover:bg-amber-500 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 w-full"
         >
-          Agregar
+          Agregar usuario
         </button>
       </form>
 
       {/* Lista */}
-      <div className="mt-10 bg-white shadow-md rounded-xl p-6 w-full max-w-3xl border border-amber-100">
-        <h3 className="text-2xl font-semibold mb-4 text-amber-600">
+      <div className="mt-10 bg-white shadow-md rounded-xl p-6 w-full max-w-4xl border border-amber-100">
+        <h3 className="text-2xl font-semibold mb-4 text-amber-600 text-center sm:text-left">
           Lista de Usuarios
         </h3>
         <ul className="space-y-4">
           {usuarios.map((u) => (
             <li
               key={u.id}
-              className="flex flex-col gap-2 bg-amber-50 hover:bg-amber-100 transition rounded-lg p-4 border border-amber-100 shadow-sm"
+              className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-amber-50 hover:bg-amber-100 transition rounded-lg p-4 border border-amber-100 shadow-sm"
             >
               {editId === u.id ? (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 w-full">
                   <input
                     type="text"
                     value={editForm.nombre}
@@ -204,8 +206,8 @@ export function Usuario() {
                   </div>
                 </div>
               ) : (
-                <div className="flex justify-between items-center">
-                  <div>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center w-full">
+                  <div className="text-center sm:text-left">
                     <p className="font-semibold text-lg text-gray-800">
                       {u.nombre} {u.apellidos}
                     </p>
@@ -215,7 +217,7 @@ export function Usuario() {
                       Registrado el {u.fecha}
                     </p>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex justify-center sm:justify-end gap-4 mt-2 sm:mt-0">
                     <button
                       onClick={() => comenzarEdicion(u)}
                       className="text-amber-600 hover:text-amber-800 transition"

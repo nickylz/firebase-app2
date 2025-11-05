@@ -25,7 +25,7 @@ function Post() {
           id: doc.id,
           ...doc.data(),
         }))
-        // orden descendente por fecha
+        // Orden descendente por fecha
         .sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
       setPost(docs);
     });
@@ -73,23 +73,23 @@ function Post() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-yellow-50 to-amber-100 text-gray-800 flex flex-col items-center py-10">
-      <h1 className="text-4xl font-bold mb-6 text-amber-600 drop-shadow-sm">
+    <div className="min-h-screen bg-linear-to-b from-yellow-50 to-amber-100 text-gray-800 flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8">
+      <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-amber-600 text-center drop-shadow-sm">
         Publicaciones
       </h1>
 
       {/* Input para nuevo post */}
-      <div className="bg-white shadow-md rounded-xl p-6 flex flex-col sm:flex-row gap-4 w-full max-w-2xl border border-amber-100">
+      <div className="bg-white shadow-md rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row gap-3 w-full max-w-2xl border border-amber-100">
         <input
-          className="flex-1 border border-amber-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-300 placeholder-gray-400"
+          className="flex-1 border border-amber-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-300 placeholder-gray-400 text-sm sm:text-base"
           type="text"
           placeholder="Escribe algo bonito..."
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && agregarPost()}
+          onKeyDown={(e) => e.key === 'Enter' && agregarPost()}
         />
         <button
-          className="bg-amber-400 hover:bg-amber-500 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 shadow-sm hover:shadow-md"
+          className="bg-amber-400 hover:bg-amber-500 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 shadow-sm hover:shadow-md text-sm sm:text-base"
           onClick={agregarPost}
         >
           Enviar
@@ -97,9 +97,11 @@ function Post() {
       </div>
 
       {/* Lista de posts */}
-      <div className="mt-10 bg-white shadow-md rounded-xl p-6 w-full max-w-2xl border border-amber-100">
-        <h3 className="text-2xl font-semibold mb-4 text-amber-600">Mensajes</h3>
-        <ul className="space-y-3">
+      <div className="mt-8 sm:mt-10 bg-white shadow-md rounded-xl p-4 sm:p-6 w-full max-w-2xl border border-amber-100">
+        <h3 className="text-2xl font-semibold mb-4 text-amber-600 text-center sm:text-left">
+          Mensajes
+        </h3>
+        <ul className="space-y-4">
           {post.map((m) => {
             const enEdicion = editId === m.id;
             const fechaCreacion = m.createdAt
@@ -120,7 +122,7 @@ function Post() {
             return (
               <li
                 key={m.id}
-                className="p-4 bg-amber-50 hover:bg-amber-100 transition rounded-lg border border-amber-100 shadow-sm flex flex-col gap-2"
+                className="p-4 bg-amber-50 hover:bg-amber-100 transition rounded-lg border border-amber-100 shadow-sm flex flex-col gap-3"
               >
                 {enEdicion ? (
                   <div className="flex flex-col gap-2">
@@ -129,13 +131,13 @@ function Post() {
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
                       onKeyDown={onEditKeyDown}
-                      className="w-full p-2 border border-amber-200 rounded-md focus:ring-2 focus:ring-amber-300 outline-none"
+                      className="w-full p-2 border border-amber-200 rounded-md focus:ring-2 focus:ring-amber-300 outline-none text-sm sm:text-base"
                       placeholder="Editar mensaje..."
                     />
-                    <div className="flex justify-end gap-2 mt-1">
+                    <div className="flex flex-col sm:flex-row justify-end gap-2 mt-1">
                       <button
                         onClick={guardarEdicion}
-                        className="flex items-center gap-1 bg-amber-400 hover:bg-amber-500 text-white px-3 py-1 rounded-md text-sm font-semibold transition"
+                        className="flex items-center justify-center gap-1 bg-amber-400 hover:bg-amber-500 text-white px-3 py-1 rounded-md text-sm font-semibold transition"
                       >
                         <Save size={16} /> Guardar
                       </button>
@@ -148,11 +150,9 @@ function Post() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium text-gray-800 break-wrap-words">
-                        {m.mensaje}
-                      </p>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                    <div className="text-center sm:text-left wrap-break-words">
+                      <p className="font-medium text-gray-800">{m.mensaje}</p>
                       <p className="text-xs text-gray-500 mt-1">
                         {fechaCreacion}
                         {fechaEdicion && (
@@ -162,7 +162,7 @@ function Post() {
                         )}
                       </p>
                     </div>
-                    <div className="flex gap-2 items-center">
+                    <div className="flex justify-center sm:justify-end gap-3 mt-1 sm:mt-0">
                       <button
                         onClick={() => comenzarEdicion(m)}
                         className="text-amber-600 hover:text-amber-800 transition"
