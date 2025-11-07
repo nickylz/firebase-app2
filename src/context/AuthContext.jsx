@@ -1,19 +1,36 @@
-/* eslint-disable react-refresh/only-export-components */
+// src/context/authContext.jsx
+// 👇 Contexto de autenticación unificado: Auth + Firestore + Storage
+
 import { createContext, useContext, useEffect, useState } from "react";
-import { auth, GoogleProvider } from "../lib/firebase";
+import { auth, googleProvider, db, storage } from "../lib/firebase"; // 🔹 CAMBIO: asegurarse de importar db y storage
+
 import {
   onAuthStateChanged,
   signOut,
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   signInWithPopup,
-  createUserWithEmailAndPassword,
 } from "firebase/auth";
 
-// 1️⃣ Crear el contexto
+import {
+  doc,
+  setDoc,
+  getDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage"; // 🔹 CAMBIO: para subir avatar
+
+// 1. Creamos el contexto
 const AuthContext = createContext();
 
-// 2️⃣ Hook personalizado para usar el contexto fácilmente
+// 2. Hook personalizado para usar el contexto
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
@@ -22,62 +39,152 @@ export function useAuth() {
   return context;
 }
 
-// 3️⃣ Componente proveedor
+// 3. Componente proveedor
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);   // Usuario actual
-  const [loading, setLoading] = useState(true); // Cargando sesión
+  const [user, setUser] = useState(null);     // 🔹 CAMBIO: aquí guardamos Auth + perfil
+  const [loading, setLoading] = useState(true);
 
-  // Escuchar cambios de sesión (login/logout/recarga)
+  // 🔹 CAMBIO: función que mezcla datos de Auth + Firestore en un solo objeto user
+  const cargarUsuarioCompleto = async (firebaseUser) => {
+    if (!firebaseUser) {
+      setUser(null);
+      return;
+    }
+
+    try {
+      const userRef = doc(db, "usuarios", firebaseUser.uid);
+      const snap = await getDoc(userRef);
+
+      if (snap.exists()) {
+        const profile = snap.data();
+        // Mezclamos todo en un solo objeto user
+        setUser({
+          ...firebaseUser,     // datos de Firebase Auth (uid, email, displayName, photoURL, etc.)
+          ...profile,          // datos de Firestore (username, avatar, provider, createdAt, etc.)
+        });
+      } else {
+        // Si no hay perfil en Firestore, usamos solo el user de Auth
+        setUser(firebaseUser);
+      }
+    } catch (error) {
+      console.error("Error al cargar usuario completo:", error);
+      setUser(firebaseUser); // al menos dejamos el user de Auth
+    }
+  };
+
+  // Escuchamos cambios de sesión (login, logout, recarga de página, etc.)
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser || null);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        await cargarUsuarioCompleto(firebaseUser); // 🔹 CAMBIO
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 
-    // Limpiar el listener al desmontar
     return () => unsubscribe();
   }, []);
 
-  // --- 🔐 Funciones de autenticación ---
+  // 🟢 REGISTRO con email/password + avatar en Storage + perfil en Firestore
+  const register = async (
+    email,
+    password,
+    {
+      username,      // 🔹 CAMBIO: nombre de usuario que viene del formulario
+      avatarFile,    // 🔹 CAMBIO: archivo de imagen (File)
+    }
+  ) => {
+    // 1. Crear usuario en Auth
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const firebaseUser = cred.user;
+    const uid = firebaseUser.uid;
 
-  // Registro con email/contraseña
-  const register = (email, password) =>
-    createUserWithEmailAndPassword(auth, email, password);
+    // 2. Subir avatar a Storage (si el usuario eligió archivo)
+    let avatarUrl = "";
 
-  // Login con email/contraseña
-  const login = (email, password) =>
-    signInWithEmailAndPassword(auth, email, password);
+    if (avatarFile) {
+      // 🔹 CAMBIO: nombre único para no sobreescribir
+      const uniqueName = `${uid}-${Date.now()}-${avatarFile.name}`;
+      const avatarRef = ref(storage, `usuario/${uniqueName}`);
+      await uploadBytes(avatarRef, avatarFile);       // subir archivo
+      avatarUrl = await getDownloadURL(avatarRef);    // obtener URL pública
+    }
 
-  // Login con Google
-  const loginWithGoogle = () => signInWithPopup(auth, GoogleProvider);
+    // 3. Crear documento de perfil en Firestore
+    const userRef = doc(db, "usuarios", uid);
+    await setDoc(userRef, {
+      uid,
+      email,
+      username,
+      avatar: avatarUrl,
+      provider: "password",        // 🔹 CAMBIO: cómo se registró
+      createdAt: serverTimestamp()
+    });
 
-  // Reset de contraseña
-  const resetPassword = (email) => sendPasswordResetEmail(auth, email);
+    // 4. Mezclar y guardar todo en user del contexto
+    await cargarUsuarioCompleto(firebaseUser); // 🔹 CAMBIO
 
-  // Logout
-  const logout = () => signOut(auth);
+    return firebaseUser;
+  };
 
-  // 📦 Empaquetar todo en un objeto
+  // 🟢 LOGIN con email/password
+  const login = async (email, password) => {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    const firebaseUser = cred.user;
+
+    await cargarUsuarioCompleto(firebaseUser); // 🔹 CAMBIO
+    return firebaseUser;
+  };
+
+  // 🟢 LOGIN con Google (y creación de perfil si no existe)
+  const loginWithGoogle = async () => {
+    const result = await signInWithPopup(auth, googleProvider);
+    const gUser = result.user;
+
+    const userRef = doc(db, "usuarios", gUser.uid);
+    const snap = await getDoc(userRef);
+
+    if (!snap.exists()) {
+      await setDoc(userRef, {
+        uid: gUser.uid,
+        email: gUser.email,
+        username: gUser.displayName || "",
+        avatar: gUser.photoURL || "",
+        provider: "google",
+        createdAt: serverTimestamp(),
+      });
+    }
+
+    await cargarUsuarioCompleto(gUser); // 🔹 CAMBIO
+
+    return gUser;
+  };
+
+  // 🟢 LOGOUT
+  const logout = async () => {
+    await signOut(auth);
+    setUser(null); // 🔹 CAMBIO: limpiamos el user mezclado
+  };
+
+  // 🟢 RESET PASSWORD
+  const resetPassword = async (email) => {
+    await sendPasswordResetEmail(auth, email);
+  };
+
   const value = {
-    user,
+    user,            // 🔹 ESTE user ya tiene username y avatar (si existen en Firestore)
     loading,
     register,
     login,
-    loginWithGoogle,
-    resetPassword,
     logout,
+    resetPassword,
+    loginWithGoogle,
   };
 
-  // 🧠 Proveer el contexto a los hijos
   return (
     <AuthContext.Provider value={value}>
-      {loading ? (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-          <p className="text-gray-600 font-medium">Cargando sesión...</p>
-        </div>
-      ) : (
-        children
-      )}
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
